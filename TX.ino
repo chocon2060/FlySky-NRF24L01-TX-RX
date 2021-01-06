@@ -46,10 +46,17 @@ void loop()
   radio.write(&radio_channel, sizeof(radio_channel));
 }
 void ppm_read(){
-  PPM_Signal_now = micros();
+PPM_Signal_now = micros();
   ch[ch_i] = PPM_Signal_now - PPM_Signal_last;
   PPM_Signal_last = PPM_Signal_now;
-  if(ch_i >0 && ch_i <6 ){
+  if(ch[ch_i] > 2500 ){
+    ch_i = 0;
+  }else if(ch[ch_i] >= 2000 &&  ch[ch_i] < 2500){
+    ch[ch_i] = 2000;
+  } else if(ch[ch_i] <= 1000){
+    ch[ch_i] = 1000;
+  }
+  if(ch_i >=1 && ch_i <=6 ){
   radio_channel[ch_i-1] = ch[ch_i];
   }
   ch_i++;
