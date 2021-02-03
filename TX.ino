@@ -31,7 +31,6 @@ void setup()
   radio.setAutoAck(false);
   radio.setDataRate(RF24_250KBPS);
   radio.setPALevel(RF24_PA_MAX);
-  radio.setCRCLength(RF24_CRC_16);
   radio.openWritingPipe(pipeOut);
   
   attachInterrupt(digitalPinToInterrupt(ppm_pin),ppm_read,RISING);
