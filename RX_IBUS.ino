@@ -1,5 +1,3 @@
-
-
 #include <SPI.h>
 #include <nRF24L01.h>
 #include <RF24.h>
@@ -11,7 +9,6 @@ uint16_t dat[] = {0,1, 2, 3,4,5,6,7,8,9,10,11,12,13};
 #define NUM_CHANNELS 14
 #define Led 4
 IBus ibus(NUM_CHANNELS);
-
 const uint64_t pipeIn =  0343347641; 
 RF24 radio(9, 10);
 uint16_t radio_channel[10];
@@ -42,7 +39,7 @@ void recvData()
 
 void loop(){
   recvData();
-
+  
   unsigned long now = millis();
   unsigned long time = millis();
   for(int i = 0; i<=9 ; i++){
@@ -55,9 +52,18 @@ void loop(){
   }
   else
   {
-  for(int i=0; i<=13 ; i++){
-    ibus.write(dat[i]);
-  }
+    if(radio.testRPD()){
+      if(dat[10] <2000){
+        dat[10]++;
+      } 
+    }else{
+     if(dat[10] >= 2){
+      dat[10]--;
+      }  
+    }
+    for(int i=0; i<=13 ; i++){
+      ibus.write(dat[i]);
+    }
     digitalWrite(4,1);
   }
  
