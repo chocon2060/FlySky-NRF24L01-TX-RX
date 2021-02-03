@@ -23,7 +23,7 @@ void setup(){
   radio.begin();
   radio.setAutoAck(false);
   radio.setDataRate(RF24_250KBPS);
-  radio.setCRCLength(RF24_CRC_16);
+  radio.setPALevel(RF24_PA_MAX);
   radio.openReadingPipe(1,pipeIn);
   radio.startListening();
   Serial.begin(115200);   
