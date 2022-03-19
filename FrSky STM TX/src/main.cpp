@@ -44,11 +44,11 @@ uint16_t ibusDat[NUM_CHANNELS];
 uint32_t ibusTime;
 IBus ibus(NUM_CHANNELS);
 
-#define radio_channel  (ppmInChannel + numOfSwitch + numOfVariable)
+#define radio_Rawchannel  (ppmInChannel + numOfSwitch + numOfVariable)
 RF24 radio(PinCE, PinCSN);
 const uint64_t pipeOut = 0343347641;
-uint16_t radio_data[radio_channel];
-
+uint16_t radio_RawData[radio_Rawchannel];
+uint8_t radio_data[17];
 #define cppmlength (ppmInChannel + numOfSwitch + numOfVariable)
 HardwareTimer *cppm = new HardwareTimer(TIM4);
 uint16_t cppmOut[cppmlength];
@@ -72,7 +72,7 @@ void timer4Setting();
 
 void disableIbus();
 void disableSpi();
-
+void dataCompression();
 void setup() {
     pinMode(PinSw1,INPUT);
     pinMode(PinSw2,INPUT);
@@ -135,14 +135,15 @@ void loop() {
     //NRF Mode Runinng
     if(NrfMode){
         for(int i = 0 ; i < ppmInChannel ; i++){
-            radio_data[i] = ppmData[i];
+            radio_RawData[i] = ppmData[i];
         }
        for(int i = 0 ; i < numOfSwitch ; i++){
-            radio_data[i+ppmInChannel] = swData[i];
+            radio_RawData[i+ppmInChannel] = swData[i];
         }
         for(int i = 0 ; i < numOfVariable ; i++){
-            radio_data[i + ppmInChannel + numOfSwitch] = varData[i];
+            radio_RawData[i + ppmInChannel + numOfSwitch] = varData[i];
         }
+        dataCompression();
         radio.write(&radio_data,sizeof(radio_data));
     }
     //R9m Mode Runinng
@@ -281,4 +282,23 @@ void disableSpi(){
     digitalWrite(PinMISO,LOW);
     digitalWrite(PinMOSI,LOW);
     digitalWrite(PinSCLK,LOW);
+}
+void dataCompression(){
+    radio_data[0] =   (uint8_t) ((radio_RawData[0]   & 0x07FF));
+    radio_data[1] =   (uint8_t) ((radio_RawData[0]   & 0x07FF) >> 8  | (radio_RawData[1]  & 0x07FF) << 3);
+    radio_data[2] =   (uint8_t) ((radio_RawData[1]   & 0x07FF) >> 5  | (radio_RawData[2]  & 0x07FF) << 6);
+    radio_data[3] =   (uint8_t) ((radio_RawData[2]   & 0x07FF) >> 2);
+    radio_data[4] =   (uint8_t) ((radio_RawData[2]   & 0x07FF) >> 10 | (radio_RawData[3]  & 0x07FF) << 1);
+    radio_data[5] =   (uint8_t) ((radio_RawData[3]   & 0x07FF) >> 7  | (radio_RawData[4]  & 0x07FF) << 4);
+    radio_data[6] =   (uint8_t) ((radio_RawData[4]   & 0x07FF) >> 4  | (radio_RawData[5]  & 0x07FF) << 7);
+    radio_data[7] =   (uint8_t) ((radio_RawData[5]   & 0x07FF) >> 1);
+    radio_data[8] =   (uint8_t) ((radio_RawData[5]   & 0x07FF) >> 9  | (radio_RawData[6]  & 0x07FF) << 2);
+    radio_data[9] =  (uint8_t) ((radio_RawData[6]   & 0x07FF) >> 6  | (radio_RawData[7]  & 0x07FF) << 5);
+    radio_data[10] =  (uint8_t) ((radio_RawData[7]   & 0x07FF) >> 3);
+    radio_data[11] =  (uint8_t) ((radio_RawData[8]   & 0x07FF));
+    radio_data[12] =  (uint8_t) ((radio_RawData[8]   & 0x07FF) >> 8  | (radio_RawData[9]  & 0x07FF) << 3);
+    radio_data[13] =  (uint8_t) ((radio_RawData[9]   & 0x07FF) >> 5  | (radio_RawData[10] & 0x07FF) << 6);
+    radio_data[14] =  (uint8_t) ((radio_RawData[10]  & 0x07FF) >> 2);
+    radio_data[15] =  (uint8_t) ((radio_RawData[10]  & 0x07FF) >> 10 | (radio_RawData[11] & 0x07FF) << 1);
+    radio_data[16] =  (uint8_t) ((radio_RawData[11]  & 0x07FF) >> 7);
 }

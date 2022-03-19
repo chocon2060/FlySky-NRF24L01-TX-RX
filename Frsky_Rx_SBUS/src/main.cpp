@@ -22,7 +22,7 @@ bool dataReceiveDone = false;
 
 const uint64_t pipeIn =  0343347641; 
 RF24 radio(9, 10);
-
+uint8_t radioRead[17];
 uint16_t radioData[Radio_Channel];
 
 uint8_t sbusData[25];
@@ -53,7 +53,7 @@ unsigned long lastRecvTime = 0;
 void recvData()
 {  
   while (radio.available()) {        
-    radio.read(&radioData, sizeof(radioData));
+    radio.read(&radioRead, sizeof(radioRead));
     lastRecvTime = millis();
     dataReceiveDone = true;
   }
@@ -85,7 +85,8 @@ void loop(){
       }  
     }
     digitalWrite(4,1);
-    if(dataReceiveDone && (now - sbusLasttime > 10)){
+    if(dataReceiveDone){
+      radio_decompress();
       for(int i = 0; i < Radio_Channel ; i++){
         sbusChannel[i] = map(radioData[i],1000,2000,172,1811);
       }
@@ -94,10 +95,27 @@ void loop(){
         Serial.write(sbusData[i]);
       }
       dataReceiveDone = false;
-      sbusLasttime = now; 
+      // sbusLasttime = now; 
     }
   }
 
+}
+void radio_decompress(){
+  radioData[0]  = uint16_t(radioRead[0]       | radioRead[1]  << 8 & 0x07FF);
+  radioData[1]  = uint16_t(radioRead[1]  >> 3 | radioRead[2]  << 5 & 0x07FF);
+  radioData[2]  = uint16_t(radioRead[2]  >> 6 | radioRead[3]  << 2  |
+                    radioRead[4] << 10 & 0x07FF);
+  radioData[3]  = uint16_t(radioRead[4]  >> 1 | radioRead[5]  << 7 & 0x07FF);
+  radioData[4]  = uint16_t(radioRead[5]  >> 4 | radioRead[6]  << 4 & 0x07FF);
+  radioData[5]  = uint16_t(radioRead[6]  >> 7 | radioRead[7]  << 1  |
+                    radioRead[8] << 9 & 0x07FF);
+  radioData[6]  = uint16_t(radioRead[8]  >> 2 | radioRead[9] << 6 & 0x07FF);
+  radioData[7]  = uint16_t(radioRead[9] >> 5 | radioRead[10] << 3 & 0x07FF);
+  radioData[8]  = uint16_t(radioRead[11]      | radioRead[12] << 8 & 0x07FF);
+  radioData[9]  = uint16_t(radioRead[12] >> 3 | radioRead[13] << 5 & 0x07FF);
+  radioData[10] = uint16_t(radioRead[13] >> 6 | radioRead[14] << 2  |
+                    radioRead[15] << 10 & 0x07FF);
+  radioData[11] = uint16_t(radioRead[15] >> 1 | radioRead[16] << 7 & 0x07FF);
 }
 void sbusConvert(){
   sbusData[0] = HEADER_;
